@@ -1,0 +1,32 @@
+CREATE TABLE people (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    kind VARCHAR(2) NOT NULL CHECK (kind IN ('PF', 'PJ')),
+    document VARCHAR(18) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20) NOT NULL DEFAULT '',
+    street VARCHAR(150) NOT NULL DEFAULT '',
+    number VARCHAR(20) NOT NULL DEFAULT '',
+    complement VARCHAR(80) NOT NULL DEFAULT '',
+    district VARCHAR(80) NOT NULL DEFAULT '',
+    city VARCHAR(80) NOT NULL DEFAULT '',
+    state VARCHAR(2) NOT NULL DEFAULT '',
+    zip VARCHAR(10) NOT NULL DEFAULT '',
+    birth_date DATE,
+    gender VARCHAR(20) NOT NULL DEFAULT '',
+    company_name VARCHAR(150) NOT NULL DEFAULT '',
+    responsible_name VARCHAR(150) NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE customers (
+    id UUID PRIMARY KEY REFERENCES people(id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE suppliers (
+    id UUID PRIMARY KEY REFERENCES people(id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_people_name ON people(name);
+CREATE INDEX idx_people_kind ON people(kind);
