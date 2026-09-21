@@ -261,6 +261,10 @@ func (s *Service) LookupCEP(ctx context.Context, cep string) (domain.Address, er
 	return s.geo.ByCEP(ctx, cep)
 }
 
+func (s *Service) SearchCEP(ctx context.Context, state, city, street, district string) ([]domain.Address, error) {
+	return s.geo.SearchCEP(ctx, state, city, street, district)
+}
+
 func (s *Service) LookupGeo(ctx context.Context, lat, lng float64) (domain.Address, error) {
 	return s.geo.ByGeo(ctx, lat, lng)
 }

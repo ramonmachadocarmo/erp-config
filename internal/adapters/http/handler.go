@@ -58,6 +58,7 @@ func (h *Handler) Register(r *gin.Engine, jwt gin.HandlerFunc) {
 	api.POST("/payment-terms", h.createTerm)
 	api.GET("/payment-terms/:id", h.getTerm)
 	api.PUT("/payment-terms/:id", h.updateTerm)
+	api.GET("/cep", h.searchCEP)
 	api.GET("/cep/:cep", h.lookupCEP)
 	api.GET("/geo", h.lookupGeo)
 	api.GET("/centers", h.listCenters)
@@ -403,6 +404,16 @@ func paymentStatus(err error) int {
 
 func (h *Handler) lookupCEP(c *gin.Context) {
 	out, err := h.svc.LookupCEP(c.Request.Context(), c.Param("cep"))
+	if err != nil {
+		httpserver.Error(c, paymentStatus(err), err)
+		return
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// searchCEP: GET /cep?state=SP&city=São Paulo&street=Paulista[&district=Bela Vista]
+func (h *Handler) searchCEP(c *gin.Context) {
+	out, err := h.svc.SearchCEP(c.Request.Context(), c.Query("state"), c.Query("city"), c.Query("street"), c.Query("district"))
 	if err != nil {
 		httpserver.Error(c, paymentStatus(err), err)
 		return

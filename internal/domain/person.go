@@ -110,6 +110,9 @@ type RoleRepository interface {
 
 type PostalLookup interface {
 	ByCEP(ctx context.Context, cep string) (Address, error)
+	// SearchCEP is the reverse of ByCEP: finds the CEP(s) of a street. state (UF), city and
+	// street (3+ chars) are required by the provider; district only narrows the result.
+	SearchCEP(ctx context.Context, state, city, street, district string) ([]Address, error)
 	ByGeo(ctx context.Context, lat, lng float64) (Address, error)
 	Search(ctx context.Context, query string) (Address, error)
 	SearchPlace(ctx context.Context, street, number, district, city, state, zip string) (Address, error)

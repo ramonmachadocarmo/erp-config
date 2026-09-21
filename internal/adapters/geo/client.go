@@ -54,6 +54,62 @@ func (c *Client) ByCEP(ctx context.Context, cep string) (domain.Address, error) 
 	}, nil
 }
 
+// SearchCEP finds CEPs from UF + city + street via ViaCEP's address search
+// (/ws/UF/city/street/json/), which returns up to 50 matches. ViaCEP has no district filter,
+// so district is applied here; if it matches nothing (typo, different spelling) the full
+// list is returned rather than an empty one.
+func (c *Client) SearchCEP(ctx context.Context, state, city, street, district string) ([]domain.Address, error) {
+	state = strings.ToUpper(strings.TrimSpace(state))
+	city, street = strings.TrimSpace(city), strings.TrimSpace(street)
+	if len(state) != 2 || len([]rune(city)) < 3 || len([]rune(street)) < 3 {
+		return nil, domain.ErrInvalid
+	}
+	u := "https://viacep.com.br/ws/" + url.PathEscape(state) + "/" + url.PathEscape(city) + "/" + url.PathEscape(street) + "/json/"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	var raw []struct {
+		CEP         string `json:"cep"`
+		Logradouro  string `json:"logradouro"`
+		Complemento string `json:"complemento"`
+		Bairro      string `json:"bairro"`
+		Localidade  string `json:"localidade"`
+		UF          string `json:"uf"`
+	}
+	if err := c.decode(req, &raw); err != nil {
+		return nil, err
+	}
+	out := make([]domain.Address, 0, len(raw))
+	for _, r := range raw {
+		out = append(out, domain.Address{
+			Zip: r.CEP, Street: r.Logradouro, Complement: r.Complemento,
+			District: r.Bairro, City: r.Localidade, State: r.UF,
+		})
+	}
+	if len(out) == 0 {
+		return nil, domain.ErrNotFound
+	}
+	return filterDistrict(out, district), nil
+}
+
+func filterDistrict(list []domain.Address, district string) []domain.Address {
+	d := fold(district)
+	if d == "" {
+		return list
+	}
+	var out []domain.Address
+	for _, a := range list {
+		if strings.Contains(fold(a.District), d) {
+			out = append(out, a)
+		}
+	}
+	if len(out) == 0 {
+		return list
+	}
+	return out
+}
+
 func (c *Client) ByGeo(ctx context.Context, lat, lng float64) (domain.Address, error) {
 	q := url.Values{}
 	q.Set("format", "jsonv2")
