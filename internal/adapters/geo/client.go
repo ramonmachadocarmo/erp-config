@@ -241,6 +241,41 @@ func (c *Client) SearchPlace(ctx context.Context, street, number, district, city
 	if stateName == "" {
 		stateName = state
 	}
+
+	// CEP-based structured search: Nominatim indexes Brazilian postal codes well and gives
+	// neighborhood-level accuracy — far more reliable than free-text for sparse OSM street data.
+	if len(zip) == 8 {
+		p := nominatimBase()
+		p.Set("postalcode", zip)
+		hits, _ := c.nominatimSearch(ctx, p)
+		for _, h := range hits {
+			a, err := hitAddress(h)
+			if err != nil {
+				continue
+			}
+			if state != "" && !inUF(state, *a.Lat, *a.Lng) {
+				continue
+			}
+			if street != "" && a.Street == "" {
+				a.Street = street
+			}
+			if number != "" && a.Number == "" {
+				a.Number = number
+			}
+			if district != "" && a.District == "" {
+				a.District = district
+			}
+			if city != "" && a.City == "" {
+				a.City = city
+			}
+			if state != "" && a.State == "" {
+				a.State = state
+			}
+			a.Zip = zip
+			return a, nil
+		}
+	}
+
 	attempts := []url.Values{}
 	for _, parts := range [][]string{
 		{line, district, city, stateName, "Brasil"},
