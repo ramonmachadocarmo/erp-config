@@ -280,6 +280,10 @@ func (c *Client) SearchPlace(ctx context.Context, street, number, district, city
 	for _, parts := range [][]string{
 		{line, district, city, stateName, "Brasil"},
 		{street, district, city, stateName, "Brasil"},
+		// Without district: many BR neighborhoods use numerals ("10 de Novembro") but Nominatim
+		// indexes them as text ("Dez de Novembro"), causing the district token to break the match.
+		{line, city, stateName, "Brasil"},
+		{street, city, stateName, "Brasil"},
 		{district, city, stateName, "Brasil"},
 		{city, stateName, "Brasil"},
 	} {
